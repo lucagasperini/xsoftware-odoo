@@ -1,0 +1,48 @@
+[
+    {
+        "name": "darkaonline/ripcord",
+        "version": "v0.1.7",
+        "version_normalized": "0.1.7.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/DarkaOnLine/Ripcord.git",
+            "reference": "e37abe596f505236c489b3f8a8e6eaa2ad7d91f7"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/DarkaOnLine/Ripcord/zipball/e37abe596f505236c489b3f8a8e6eaa2ad7d91f7",
+            "reference": "e37abe596f505236c489b3f8a8e6eaa2ad7d91f7",
+            "shasum": ""
+        },
+        "require": {
+            "php": ">=5.4"
+        },
+        "require-dev": {
+            "friendsofphp/php-cs-fixer": "^2.14@dev"
+        },
+        "time": "2019-01-02T06:13:30+00:00",
+        "type": "library",
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Ripcord\\": "src/Ripcord"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "MIT"
+        ],
+        "authors": [
+            {
+                "name": "Darius Matulionis",
+                "email": "darius@matulionis.lt"
+            }
+        ],
+        "description": "RPC client and server around PHP's xmlrpc library",
+        "keywords": [
+            "rpc",
+            "xml",
+            "xmlrpc"
+        ]
+    }
+]
