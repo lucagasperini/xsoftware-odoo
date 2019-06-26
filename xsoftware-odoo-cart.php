@@ -21,6 +21,7 @@ class xs_odoo_cart
                 add_filter('xs_cart_add', [$this, 'cart_add'], 10, 2);
                 add_filter('xs_cart_approved', [$this, 'store_sale_order']);
                 add_filter('xs_cart_sale_order', [$this, 'get_sale_order']);
+                add_filter('xs_cart_item_price', [$this, 'item_price']);
 
                 $this->options = get_option('xs_options_odoo');
         }
@@ -71,6 +72,23 @@ class xs_odoo_cart
                                 $_POST['xs_odoo_product_id']
                         );
                 }
+        }
+
+        function item_price($post_id)
+        {
+                global $xs_odoo;
+                $post_meta = get_post_meta($post_id);
+
+                $product_variant = intval($post_meta['xs_odoo_product_id'][0]);
+
+                $price = $xs_odoo->search_read(
+                        'product.product',
+                        [
+                                ['id', '=', $product_variant ]
+                        ],
+                        ['list_price']
+                );
+                return $price[0]['list_price'];
         }
 
 
