@@ -79,6 +79,12 @@ class xs_odoo_cart
                 global $xs_odoo;
                 $post_meta = get_post_meta($post_id);
 
+                if(
+                        !isset($post_meta['xs_odoo_product_id'][0]) ||
+                        empty($post_meta['xs_odoo_product_id'][0])
+                )
+                        return '';
+
                 $product_variant = intval($post_meta['xs_odoo_product_id'][0]);
 
                 $price = $xs_odoo->search_read(
