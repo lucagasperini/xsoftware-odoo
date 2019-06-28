@@ -31,7 +31,7 @@ class xs_odoo
 	 *
 	 * @var string
 	 */
-	protected $host;
+	public $host;
 
 	/**
 	 * Unique identifier for current user
@@ -304,7 +304,7 @@ fields
 
 		$this->path = $path;
 
-		$this->client = Ripcord::client($this->host . '/' . $path);
+		$this->client = Ripcord::client($this->host . '/xmlrpc/2/' . $path);
 
         return $this->client;
 	}

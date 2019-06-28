@@ -31,7 +31,7 @@ class xs_odoo_cart
                 add_meta_box(
                         'xs_cart_metaboxes',
                         'XSoftware Odoo Cart',
-                        array($this,'metaboxes_print'),
+                        [$this,'metaboxes_print'],
                         ['xs_product'],
                         'advanced',
                         'high'
@@ -44,15 +44,18 @@ class xs_odoo_cart
 
                 $id = isset($v['xs_odoo_product_id'][0]) ? intval($v['xs_odoo_product_id'][0]) : '';
 
+                $variant_list = $this->get_product_variant_list();
+                $variant_list[0] = 'Empty'; /* Empty value */
+
                 $data[1][0] = 'Select Odoo product';
                 $data[1][1] = xs_framework::create_select([
                         'name' => 'xs_odoo_product_id',
                         'selected' => $id,
-                        'data' => $this->get_product_variant_list(),
+                        'data' => $variant_list,
                         'default' => 'Select an Odoo product'
                 ]);
 
-                xs_framework::create_table(array('data' => $data ));
+                xs_framework::create_table(['data' => $data]);
         }
 
         function save_post($post_id, $post)
@@ -62,10 +65,7 @@ class xs_odoo_cart
                 if($post_type !== 'xs_product')
                         return;
 
-                if(
-                        isset($_POST['xs_odoo_product_id']) &&
-                        !empty($_POST['xs_odoo_product_id'])
-                ) {
+                if(isset($_POST['xs_odoo_product_id'])) {
                         update_post_meta(
                                 $post_id,
                                 'xs_odoo_product_id',
@@ -92,9 +92,22 @@ class xs_odoo_cart
                         [
                                 ['id', '=', $product_variant ]
                         ],
-                        ['list_price']
+                        ['list_price', 'currency_id']
                 );
-                return $price[0]['list_price'];
+                $currency = $xs_odoo->read(
+                        'res.currency',
+                        [
+                                $price[0]['currency_id'][0]
+                        ],
+                        ['name']
+                );
+
+                $output = [
+                        'price' => $price[0]['list_price'],
+                        'currency' => $currency[0]['name']
+                ];
+
+                return $output;
         }
 
 
@@ -207,11 +220,22 @@ class xs_odoo_cart
                         [
                                 'amount_untaxed',
                                 'amount_tax',
-                                'amount_total'
+                                'amount_total',
+                                'currency_id'
                         ]
                 );
+
                 $sale_order = $sale_order[0];
 
+                $currency = $xs_odoo->read(
+                        'res.currency',
+                        [
+                                $sale_order['currency_id'][0]
+                        ],
+                        ['name']
+                );
+
+                $offset['currency'] = $currency[0]['name'];
                 $offset['untaxed'] = $sale_order['amount_untaxed'];
                 $offset['taxed'] = $sale_order['amount_tax'];
                 $offset['total'] = $sale_order['amount_total'];
@@ -382,6 +406,14 @@ class xs_odoo_cart
                 }
 
                 unset($_SESSION['xs_cart_odoo']);
+
+                $host = $xs_odoo->host;
+
+                $output = [
+                        'invoice_url' => $host.'/report/pdf/account.report_invoice/'.$invoice_id[0]
+                ];
+
+                return $output;
         }
 
         function get_product_variant_list()
