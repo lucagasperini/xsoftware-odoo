@@ -99,12 +99,13 @@ class xs_odoo_cart
                         [
                                 $price[0]['currency_id'][0]
                         ],
-                        ['name']
+                        ['name', 'symbol']
                 );
 
                 $output = [
                         'price' => $price[0]['list_price'],
-                        'currency' => $currency[0]['name']
+                        'currency' => $currency[0]['name'],
+                        'currency_symbol' => $currency[0]['symbol']
                 ];
 
                 return $output;
@@ -116,7 +117,7 @@ class xs_odoo_cart
                 $cart = $args['cart'];
 
                 global $xs_odoo;
-                $offset = array();
+                $items = array();
 
                 if(
                         !isset($_SESSION['xs_cart_odoo']['sale_order']) ||
@@ -205,7 +206,7 @@ class xs_odoo_cart
                         $item['quantity'] = $quantity;
                         $item['price'] = $sale_order_line['price_unit'];
 
-                        $offset['items'][$id] = $item;
+                        $items[$id] = $item;
                 }
 
                 $criteria = [
@@ -232,13 +233,17 @@ class xs_odoo_cart
                         [
                                 $sale_order['currency_id'][0]
                         ],
-                        ['name']
+                        ['name', 'symbol']
                 );
 
-                $offset['currency'] = $currency[0]['name'];
-                $offset['untaxed'] = $sale_order['amount_untaxed'];
-                $offset['taxed'] = $sale_order['amount_tax'];
-                $offset['total'] = $sale_order['amount_total'];
+                $offset = [
+                        'items' => $items,
+                        'currency' => $currency[0]['name'],
+                        'untaxed' => $sale_order['amount_untaxed'],
+                        'taxed' => $sale_order['amount_tax'],
+                        'total' => $sale_order['amount_total'],
+                        'currency_symbol' => $currency[0]['symbol']
+                ];
 
                 return $offset;
         }
