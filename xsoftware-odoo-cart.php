@@ -261,11 +261,9 @@ class xs_odoo_cart
                 return TRUE;
         }
 
-        function store_sale_order($order_details)
+        function store_sale_order($info)
         {
                 global $xs_odoo;
-
-                $payer_info = $order_details['payer']['payer_info'];
 
                 $partner_id = get_user_meta(get_current_user_id(), 'xs_odoo_partner_id');
                 $partner_id = intval($partner_id[0]);
@@ -276,20 +274,19 @@ class xs_odoo_cart
                 $country_id = $xs_odoo->search(
                         'res.country',
                         [
-                                ['code', '=', $payer_info['shipping_address']['country_code']]
+                                ['code', '=', $info['shipping_address']['country_code']]
                         ]
                 );
 
-
                 $user_info = [
                         'type' => 'invoice',
-                        'name' => $payer_info['first_name'] . ' ' . $payer_info['last_name'],
+                        'name' => $info['payer']['first_name'] . ' ' . $info['payer']['last_name'],
                         'parent_id' => $partner_id,
-                        'email' => $payer_info['email'],
-                        'phone' => $payer_info['phone'],
-                        'street' => $payer_info['shipping_address']['line1'],
-                        'city' => $payer_info['shipping_address']['city'],
-                        'zip' => $payer_info['shipping_address']['postal_code'],
+                        'email' => $info['payer']['email'],
+                        'phone' => $info['payer']['phone'],
+                        'street' => $info['shipping_address']['line1'],
+                        'city' => $info['shipping_address']['city'],
+                        'zip' => $info['shipping_address']['zip'],
                         'country_id' => $country_id[0]
                 ];
 
@@ -352,7 +349,7 @@ class xs_odoo_cart
 
                 $journal_id = intval($this->options['cart']['journal']);
                 $payment_date = date(DATE_ISO8601, strtotime('now'));
-                $amount = $order_details['transactions'][0]['amount']['total'];
+                $amount = $info['transaction']['total'];
 
                 $payment_id = $xs_odoo->create(
                         'account.payment',
@@ -362,8 +359,8 @@ class xs_odoo_cart
                                 'invoice_ids' => [[6,0,$invoice_id]],
                                 'amount' => $amount,
                                 'payment_method_id' => 3,
-                                'communication' => $order_details['id'],
-                                'payment_reference' => $order_details['id'],
+                                'communication' => $info['payment']['id'],
+                                'payment_reference' => $info['payment']['id'],
                                 'journal_id' => $journal_id,
                                 'partner_id' => $child_partner,
                                 'payment_type' => 'inbound',
@@ -383,7 +380,7 @@ class xs_odoo_cart
                         [ 'state' => 'reconciled' ]
                 );
 
-                if(isset($order_details['amount_fees']) && !empty($order_details['amount_fees'])) {
+                if(isset($info['transaction']['fee']) && !empty($info['transaction']['fee'])) {
 
                         $partner_fees = intval($this->options['cart']['partner_fees']);
 
@@ -391,10 +388,10 @@ class xs_odoo_cart
                                 'account.payment',
                                 [
                                         'payment_date' => $payment_date,
-                                        'amount' => $order_details['amount_fees'],
+                                        'amount' => $info['transaction']['fee'],
                                         'payment_method_id' => 3,
-                                        'communication' => $order_details['id'],
-                                        'payment_reference' => $order_details['id'],
+                                        'communication' => $info['payment']['id'],
+                                        'payment_reference' => $info['payment']['id'],
                                         'journal_id' => $journal_id,
                                         'partner_id' => $partner_fees,
                                         'payment_type' => 'outbound',
@@ -412,13 +409,110 @@ class xs_odoo_cart
 
                 unset($_SESSION['xs_cart_odoo']);
 
-                $host = $xs_odoo->host;
+                $invoice = $xs_odoo->search_read('account.invoice', [['id', '=', $invoice_id]]);
+                $invoice = $invoice[0];
 
-                $output = [
-                        'invoice_url' => $host.'/report/pdf/account.report_invoice/'.$invoice_id[0]
+                $info['invoice'] = [
+                        'id' => $invoice['id'],
+                        'name' => $invoice['display_name'],
+                        'origin' => $invoice['origin'],
+                        'reference' => $invoice['reference'],
+                        'date_invoice' => $invoice['date_invoice'],
+                        'date_due' => $invoice['date_due'],
+                        'date' => $invoice['date'],
                 ];
 
-                return $output;
+                foreach($invoice['invoice_line_ids'] as $id) {
+                        $invoice_lines_ids[] = $id;
+                }
+
+                $invoice_lines = $xs_odoo->read(
+                        'account.invoice.line',
+                        $invoice_lines_ids
+                );
+
+                unset($info['items']);
+
+                foreach($invoice_lines as $item) {
+                        $tmp = array();
+                        $tmp['name'] = $item['name'];
+                        $tmp['price'] = $item['price_unit'];
+                        $tmp['tax'] = $item['price_tax'];
+
+                        $tmp['tax_code'] = '';
+
+                        foreach($item['invoice_line_tax_ids'] as $taxes) {
+                                $taxes_ids[] = $taxes;
+                        }
+
+                        $tax_list = $xs_odoo->read(
+                                'account.tax',
+                                $taxes_ids,
+                                ['description']
+                        );
+
+                        foreach($tax_list as $tax) {
+                                $tmp['tax_code'] .= $tax['description'] . ' ';
+                        }
+
+                        $tmp['tax_code'] = trim($tmp['tax_code']);
+
+                        $tmp['quantity'] = $item['quantity'];
+                        $tmp['discount'] = $item['discount'];
+                        $tmp['subtotal'] = $item['price_subtotal'];
+
+                        $info['items'][] = $tmp;
+                }
+
+                $currency = $xs_odoo->read(
+                        'res.currency',
+                        [
+                                $invoice['currency_id'][0]
+                        ],
+                        ['symbol']
+                );
+
+
+                $info['transaction']['currency_symbol'] = $currency[0]['symbol'];
+
+                $company = $xs_odoo->read(
+                        'res.company',
+                        [
+                                $invoice['company_id'][0]
+                        ]
+                );
+
+                $company = $company[0];
+
+                $info['company'] = [
+                        'name' => $company['name'],
+                        'logo' => $company['logo'],
+                        'phone' => $company['phone'],
+                        'website' => $company['website'],
+                        'email' => $company['email'],
+                ];
+
+                $country_code = $xs_odoo->read(
+                        'res.country',
+                        [
+                                $company['country_id'][0]
+                        ],
+                        [
+                                'code'
+                        ]
+                );
+                $country_code = $country_code[0];
+
+                $info['company_address'] = [
+                        'recipient_name' => $company['name'],
+                        'line1' => $company['street'],
+                        'city' => $company['city'],
+                        //'state' => $company['state'],
+                        'zip' => $company['zip'],
+                        'country_code' => $country_code['code']
+                ];
+
+                return $info;
         }
 
         function get_product_variant_list()
