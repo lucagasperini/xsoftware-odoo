@@ -440,6 +440,7 @@ class xs_odoo_cart
                         $tmp['tax'] = $item['price_tax'];
 
                         $tmp['tax_code'] = '';
+                        $taxes_ids = array();
 
                         foreach($item['invoice_line_tax_ids'] as $taxes) {
                                 $taxes_ids[] = $taxes;
