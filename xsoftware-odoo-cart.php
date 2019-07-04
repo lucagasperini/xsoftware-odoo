@@ -117,7 +117,7 @@ class xs_odoo_cart
                 $cart = $args['cart'];
 
                 global $xs_odoo;
-                $items = array();
+                $o = array();
 
                 if(
                         !isset($_SESSION['xs_cart_odoo']['sale_order']) ||
@@ -190,23 +190,44 @@ class xs_odoo_cart
                                 )
                         ));
 
-                        $criteria = [
-                        ['id', '=', $line_id],
-                        ];
-
-                        $ids = $xs_odoo->search('sale.order.line', $criteria);
-
-                        $sale_order_line = $xs_odoo->read('sale.order.line', $ids, ['price_unit']);
+                        $sale_order_line = $xs_odoo->search_read(
+                                'sale.order.line',
+                                [
+                                        ['id', '=', $line_id],
+                                ]
+                        );
 
                         $sale_order_line = $sale_order_line[0];
 
-
-                        $item['id'] = $id;
-                        $item['name'] = $post->post_title;
+                        $item['id'] = $product_variant;
+                        $item['name'] = $sale_order_line['name'];
                         $item['quantity'] = $quantity;
                         $item['price'] = $sale_order_line['price_unit'];
+                        $item['subtotal'] = $sale_order_line['price_subtotal'];
+                        $item['discount'] = $args['discount'];
+                        $item['tax'] = $sale_order_line['price_tax'];
 
-                        $items[$id] = $item;
+                        $item['tax_code'] = '';
+                        $taxes_ids = array();
+
+                        foreach($sale_order_line['tax_id'] as $taxes) {
+                                $taxes_ids[] = $taxes;
+                        }
+
+                        $tax_list = $xs_odoo->read(
+                                'account.tax',
+                                $taxes_ids,
+                                ['description']
+                        );
+
+                        foreach($tax_list as $tax) {
+                                $item['tax_code'] .= $tax['description'] . ' ';
+                        }
+
+                        $item['tax_code'] = trim($item['tax_code']);
+
+
+                        $o['items'][] = $item;
                 }
 
                 $criteria = [
@@ -217,13 +238,7 @@ class xs_odoo_cart
 
                 $sale_order = $xs_odoo->read(
                         'sale.order',
-                        $ids,
-                        [
-                                'amount_untaxed',
-                                'amount_tax',
-                                'amount_total',
-                                'currency_id'
-                        ]
+                        $ids
                 );
 
                 $sale_order = $sale_order[0];
@@ -236,16 +251,22 @@ class xs_odoo_cart
                         ['name', 'symbol']
                 );
 
-                $offset = [
-                        'items' => $items,
-                        'currency' => $currency[0]['name'],
-                        'untaxed' => $sale_order['amount_untaxed'],
-                        'taxed' => $sale_order['amount_tax'],
-                        'total' => $sale_order['amount_total'],
-                        'currency_symbol' => $currency[0]['symbol']
+                $o['sale_order'] = [
+                        'name' => $sale_order['name'],
+                        'date_order' => $sale_order['date_order'],
+                        'validity_date' => $sale_order['validity_date'],
                 ];
 
-                return $offset;
+                $o['transaction'] = [
+                        'currency' => $currency[0]['name'],
+                        'subtotal' => $sale_order['amount_untaxed'],
+                        'tax' => $sale_order['amount_tax'],
+                        'total' => $sale_order['amount_total'],
+                        'currency_symbol' => $currency[0]['symbol'],
+                        'undiscounted' => $sale_order['amount_undiscounted']
+                ];
+
+                return $o;
         }
 
         function cart_add($id_item, $qt)
@@ -502,13 +523,26 @@ class xs_odoo_cart
                                 'code'
                         ]
                 );
+
                 $country_code = $country_code[0];
+
+                $state_code = $xs_odoo->read(
+                        'res.country.state',
+                        [
+                                $company['state_id'][0]
+                        ],
+                        [
+                                'code'
+                        ]
+                );
+
+                $state_code = $state_code[0];
 
                 $info['company_address'] = [
                         'recipient_name' => $company['name'],
                         'line1' => $company['street'],
                         'city' => $company['city'],
-                        //'state' => $company['state'],
+                        'state_code' => $state_code['code'],
                         'zip' => $company['zip'],
                         'country_code' => $country_code['code']
                 ];
