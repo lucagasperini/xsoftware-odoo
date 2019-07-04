@@ -26,54 +26,54 @@ class xs_odoo
 
         private $options = array( );
 
-        	/**
+                /**
  * Host to connect to
-	 *
-	 * @var string
-	 */
-	public $host;
+         *
+         * @var string
+         */
+        public $host;
 
-	/**
-	 * Unique identifier for current user
-	 *
-	 * @var integer
-	 */
-	protected $uid;
+        /**
+         * Unique identifier for current user
+         *
+         * @var integer
+         */
+        protected $uid;
 
-	/**
-	 * Current users username
-	 *
-	 * @var string
-	 */
-	protected $user;
+        /**
+         * Current users username
+         *
+         * @var string
+         */
+        protected $user;
 
-	/**
-	 * Current database
-	 *
-	 * @var string
-	 */
-	protected $database;
+        /**
+         * Current database
+         *
+         * @var string
+         */
+        protected $database;
 
-	/**
-	 * Password for current user
-	 *
-	 * @var string
-	 */
-	protected $password;
+        /**
+         * Password for current user
+         *
+         * @var string
+         */
+        protected $password;
 
-	/**
-	 * Ripcord Client
-	 *
-	 * @var Client
-	 */
-	protected $client;
+        /**
+         * Ripcord Client
+         *
+         * @var Client
+         */
+        protected $client;
 
-	/**
-	 * XmlRpc endpoint
-	 *
-	 * @var string
-	 */
-	protected $path;
+        /**
+         * XmlRpc endpoint
+         *
+         * @var string
+         */
+        protected $path;
 
         function __construct()
         {
@@ -86,31 +86,31 @@ class xs_odoo
 
         }
 
-	/**
-	 * Get version
-	 *
-	 * @return array Odoo version
-	 */
-	public function version()
-	{
-		$response = $this->getClient('common')->version();
+        /**
+         * Get version
+         *
+         * @return array Odoo version
+         */
+        public function version()
+        {
+                $response = $this->getClient('common')->version();
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Search models
-	 *
-	 * @param string  $model    Model
-	 * @param array   $criteria Array of criteria
-	 * @param integer $offset   Offset
-	 * @param integer $limit    Max results
-	 *
-	 * @return array Array of model id's
-	 */
-	public function search($model, $criteria = array(), $offset = 0, $limit = 100, $order = '')
-	{
-		$response = $this->getClient('object')->execute_kw(
+        /**
+         * Search models
+         *
+         * @param string  $model    Model
+         * @param array   $criteria Array of criteria
+         * @param integer $offset   Offset
+         * @param integer $limit    Max results
+         *
+         * @return array Array of model id's
+         */
+        public function search($model, $criteria = array(), $offset = 0, $limit = 100, $order = '')
+        {
+                $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
             $this->password,
@@ -120,20 +120,20 @@ class xs_odoo
             ['offset'=>$offset, 'limit'=>$limit, 'order' => $order]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Search_count models
-	 *
-	 * @param string  $model    Model
-	 * @param array   $criteria Array of criteria
-	 *
-	 * @return array Array of model id's
-	 */
-	public function search_count($model, $criteria = array())
-	{
-		$response = $this->getClient('object')->execute_kw(
+        /**
+         * Search_count models
+         *
+         * @param string  $model    Model
+         * @param array   $criteria Array of criteria
+         *
+         * @return array Array of model id's
+         */
+        public function search_count($model, $criteria = array())
+        {
+                $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
             $this->password,
@@ -142,20 +142,20 @@ class xs_odoo
             [$criteria]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Read model(s)
-	 *
-	 * @param string $model  Model
-	 * @param array  $ids    Array of model id's
-	 * @param array  $fields Index array of fields to fetch, an empty array fetches all fields
-	 *
-	 * @return array An array of models
-	 */
-	public function read($model, $ids, $fields = array())
-	{
+        /**
+         * Read model(s)
+         *
+         * @param string $model  Model
+         * @param array  $ids    Array of model id's
+         * @param array  $fields Index array of fields to fetch, an empty array fetches all fields
+         *
+         * @return array An array of models
+         */
+        public function read($model, $ids, $fields = array())
+        {
 
         $response = $this->getClient('object')->execute_kw(
             $this->database,
@@ -167,22 +167,22 @@ class xs_odoo
             ['fields'=>$fields]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Search and Read model(s)
-	 *
-	 * @param string $model     Model
+        /**
+         * Search and Read model(s)
+         *
+         * @param string $model     Model
      * @param array  $criteria  Array of criteria
-	 * @param array  $fields    Index array of fields to fetch, an empty array fetches all
+         * @param array  $fields    Index array of fields to fetch, an empty array fetches all
 fields
      * @param integer $limit    Max results
-	 *
-	 * @return array An array of models
-	 */
-	public function search_read($model, $criteria = [], $fields = [], $limit=100, $order = '')
-	{
+         *
+         * @return array An array of models
+         */
+        public function search_read($model, $criteria = [], $fields = [], $limit=100, $order = '')
+        {
         $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
@@ -193,19 +193,19 @@ fields
             ['fields'=>$fields,'limit'=>$limit, 'order' => $order]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
     /**
-   	 * Create model
-   	 *
-   	 * @param string $model Model
-   	 * @param array  $data  Array of fields with data (format: ['field' => 'value'])
-   	 *
-   	 * @return integer Created model id
-   	 */
-   	public function create($model, $data)
-   	{
+            * Create model
+            *
+            * @param string $model Model
+            * @param array  $data  Array of fields with data (format: ['field' => 'value'])
+            *
+            * @return integer Created model id
+            */
+           public function create($model, $data)
+           {
         $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
@@ -216,20 +216,20 @@ fields
         );
 
 //        print_r($response);
-   		return $response;
-   	}
+                   return $response;
+           }
 
-	/**
-	 * Update model(s)
-	 *
-	 * @param string $model  Model
-	 * @param array  $ids     Model ids to update
-	 * @param array  $fields A associative array (format: ['field' => 'value'])
-	 *
-	 * @return array
-	 */
-	public function write($model, $ids, $fields)
-	{
+        /**
+         * Update model(s)
+         *
+         * @param string $model  Model
+         * @param array  $ids     Model ids to update
+         * @param array  $fields A associative array (format: ['field' => 'value'])
+         *
+         * @return array
+         */
+        public function write($model, $ids, $fields)
+        {
         $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
@@ -242,19 +242,19 @@ fields
             ]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Unlink model(s)
-	 *
-	 * @param string $model Model
-	 * @param array  $ids   Array of model id's
-	 *
-	 * @return boolean True is successful
-	 */
-	public function unlink($model, $ids)
-	{
+        /**
+         * Unlink model(s)
+         *
+         * @param string $model Model
+         * @param array  $ids   Array of model id's
+         *
+         * @return boolean True is successful
+         */
+        public function unlink($model, $ids)
+        {
         $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
@@ -264,11 +264,11 @@ fields
             [$ids]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	public function command($model, $command, $values)
-	{
+        public function command($model, $command, $values)
+        {
         $response = $this->getClient('object')->execute_kw(
             $this->database,
             $this->uid(),
@@ -278,57 +278,57 @@ fields
             [$values]
         );
 
-		return $response;
-	}
+                return $response;
+        }
 
-	/**
-	 * Get XmlRpc Client
-	 *
-	 * This method returns an XmlRpc Client for the requested endpoint.
-	 * If no endpoint is specified or if a client for the requested endpoint is
-	 * already initialized, the last used client will be returned.
-	 *
-	 * @param null|string $path The api endpoint
-	 *
-	 * @return Client
-	 */
-	protected function getClient($path = null)
-	{
-		if ($path === null) {
-			return $this->client;
-		}
+        /**
+         * Get XmlRpc Client
+         *
+         * This method returns an XmlRpc Client for the requested endpoint.
+         * If no endpoint is specified or if a client for the requested endpoint is
+         * already initialized, the last used client will be returned.
+         *
+         * @param null|string $path The api endpoint
+         *
+         * @return Client
+         */
+        protected function getClient($path = null)
+        {
+                if ($path === null) {
+                        return $this->client;
+                }
 
-		if ($this->path === $path) {
-			return $this->client;
-		}
+                if ($this->path === $path) {
+                        return $this->client;
+                }
 
-		$this->path = $path;
+                $this->path = $path;
 
-		$this->client = Ripcord::client($this->host . '/xmlrpc/2/' . $path);
+                $this->client = Ripcord::client($this->host . '/xmlrpc/2/' . $path);
 
         return $this->client;
-	}
+        }
 
     /**
-	 * Get uid
-	 *
-	 * @return int $uid
-	 */
-	protected function uid()
-	{
-		if ($this->uid === null) {
-			$client = $this->getClient('common');
+         * Get uid
+         *
+         * @return int $uid
+         */
+        protected function uid()
+        {
+                if ($this->uid === null) {
+                        $client = $this->getClient('common');
 
-			$this->uid = $client->authenticate(
-				$this->database,
-				$this->user,
-				$this->password,
+                        $this->uid = $client->authenticate(
+                                $this->database,
+                                $this->user,
+                                $this->password,
                 array()
-			);
-		}
+                        );
+                }
 
-		return $this->uid;
-	}
+                return $this->uid;
+        }
 }
 
 endif;
