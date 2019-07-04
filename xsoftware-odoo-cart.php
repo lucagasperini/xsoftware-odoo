@@ -434,9 +434,7 @@ class xs_odoo_cart
 
                 $invoice = $xs_odoo->read(
                         'account.invoice',
-                        [
-                                $invoice_id
-                        ]
+                        $invoice_id
                 );
                 $invoice = $invoice[0];
 
