@@ -201,7 +201,7 @@ class xs_odoo_cart
 
                         $sale_order_line = $sale_order_line[0];
 
-                        $item['id'] = $product_variant;
+                        $item['id'] = $id;
                         $item['name'] = $sale_order_line['name'];
                         $item['quantity'] = $quantity;
                         $item['price'] = $sale_order_line['price_unit'];
