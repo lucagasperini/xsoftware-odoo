@@ -19,9 +19,11 @@ class xs_odoo_cart
                 add_action('add_meta_boxes', [$this, 'metaboxes']);
                 add_action('save_post', [$this,'save_post'], 10, 2);
                 add_filter('xs_cart_add', [$this, 'cart_add'], 10, 2);
-                add_filter('xs_cart_approved', [$this, 'store_sale_order']);
+                add_filter('xs_cart_approved', [$this, 'create_invoice']);
                 add_filter('xs_cart_sale_order', [$this, 'get_sale_order']);
                 add_filter('xs_cart_item_price', [$this, 'item_price']);
+                add_filter('xs_cart_invoice_pdf', [$this, 'create_invoice_pdf']);
+                add_filter('xs_cart_show_invoice', [$this, 'get_invoice_pdf']);
 
                 $this->options = get_option('xs_options_odoo');
         }
@@ -282,7 +284,7 @@ class xs_odoo_cart
                 return TRUE;
         }
 
-        function store_sale_order($info)
+        function create_invoice($info)
         {
                 global $xs_odoo;
 
@@ -548,6 +550,96 @@ class xs_odoo_cart
                 ];
 
                 return $info;
+        }
+
+        function create_invoice_pdf($invoice)
+        {
+                global $xs_odoo;
+
+                $id_attachment = $xs_odoo->create(
+                        'ir.attachment',
+                        [
+                                'datas' => $invoice['pdf'],
+                                'public' => FALSE,
+                                'res_field' => 'account.invoice',
+                                'mimetype' => 'application/pdf',
+                                'name' => $invoice['name'],
+                                'datas_fname' => 'invoice-'.$invoice['id'].'.pdf',
+                        ]
+                );
+
+                $xs_odoo->write(
+                        'account.invoice',
+                        [
+                                $invoice['id']
+                        ],
+                        [
+                                'message_main_attachment_id' => $id_attachment
+                        ]
+                );
+        }
+
+        function get_invoice_pdf($invoice_id)
+        {
+                global $xs_odoo;
+
+                $attachment = $xs_odoo->read(
+                        'account.invoice',
+                        [
+                                $invoice_id
+                        ],
+                        [
+                                'message_main_attachment_id',
+                                'partner_id'
+                        ]
+                );
+                $id_attachment = $attachment[0]['message_main_attachment_id'][0];
+                $user_partner = $attachment[0]['partner_id'][0];
+
+                $parent_id = $xs_odoo->read(
+                        'res.partner',
+                        [
+                                $user_partner
+                        ],
+                        [
+                                'parent_id'
+                        ]
+                );
+
+                $user_partner = $parent_id[0]['parent_id'][0];
+
+                $partner_id = get_user_meta(get_current_user_id(),'xs_odoo_partner_id');
+                /* Partner ID must be an integer! */
+                $partner_id = intval($partner_id[0]);
+
+                if(xs_framework::has_user_role('administrator')) {
+                        $partner_id = $user_partner;
+                }
+
+                if(empty($id_attachment) || $user_partner !== $partner_id)
+                        return '<h1>You do not have permission to log in here!</h1>';
+
+                $pdf = $xs_odoo->read(
+                        'ir.attachment',
+                        [
+                                $id_attachment
+                        ],
+                        [
+                                'datas',
+                                'public',
+                                'res_field',
+                                'mimetype',
+                                'name',
+                                'datas_fname',
+                        ]
+                );
+                $pdf = $pdf[0];
+
+                $output = '';
+                $output .= '<iframe src="data:application/pdf;base64,'.$pdf['datas'].'"
+                        style="width:100%;height:500px;"></iframe>';
+
+                return $output;
         }
 
         function get_product_variant_list()
