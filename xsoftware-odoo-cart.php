@@ -23,7 +23,7 @@ class xs_odoo_cart
                 add_filter('xs_cart_sale_order', [$this, 'get_sale_order']);
                 add_filter('xs_cart_item_price', [$this, 'item_price']);
                 add_filter('xs_cart_invoice_pdf', [$this, 'create_invoice_pdf']);
-                add_filter('xs_cart_show_invoice', [$this, 'get_invoice_pdf']);
+                add_filter('xs_cart_get_invoice', [$this, 'get_invoice_pdf']);
 
                 $this->options = get_option('xs_options_odoo');
         }
@@ -432,7 +432,12 @@ class xs_odoo_cart
 
                 unset($_SESSION['xs_cart_odoo']);
 
-                $invoice = $xs_odoo->search_read('account.invoice', [['id', '=', $invoice_id]]);
+                $invoice = $xs_odoo->read(
+                        'account.invoice',
+                        [
+                                $invoice_id
+                        ]
+                );
                 $invoice = $invoice[0];
 
                 $info['invoice'] = [
@@ -583,30 +588,73 @@ class xs_odoo_cart
         {
                 global $xs_odoo;
 
-                $attachment = $xs_odoo->read(
+                $invoice = $xs_odoo->read(
                         'account.invoice',
                         [
                                 $invoice_id
                         ],
                         [
+                                'id',
+                                'display_name',
+                                'origin',
+                                'reference',
+                                'date_invoice',
+                                'date_due',
+                                'date',
                                 'message_main_attachment_id',
                                 'partner_id'
                         ]
                 );
-                $id_attachment = $attachment[0]['message_main_attachment_id'][0];
-                $user_partner = $attachment[0]['partner_id'][0];
 
-                $parent_id = $xs_odoo->read(
+                $invoice = $invoice[0];
+
+                $info['invoice'] = [
+                        'id' => $invoice['id'],
+                        'name' => $invoice['display_name'],
+                        'origin' => $invoice['origin'],
+                        'reference' => $invoice['reference'],
+                        'date_invoice' => $invoice['date_invoice'],
+                        'date_due' => $invoice['date_due'],
+                        'date' => $invoice['date'],
+                ];
+
+                $id_attachment = $invoice['message_main_attachment_id'][0];
+                $user_partner = $invoice['partner_id'][0];
+
+                $parent = $xs_odoo->read(
                         'res.partner',
                         [
                                 $user_partner
                         ],
                         [
-                                'parent_id'
+                                'parent_id',
+                                'name',
+                                'phone',
+                                'email',
+                                'country_id'
                         ]
                 );
 
-                $user_partner = $parent_id[0]['parent_id'][0];
+                $parent = $parent[0];
+
+                $country_code = $xs_odoo->read(
+                        'res.country',
+                        [
+                                $parent['country_id'][0]
+                        ],
+                        [
+                                'code'
+                        ]
+                );
+
+                $info['payer'] = [
+                        'name' => $parent['name'],
+                        'email' => $parent['email'],
+                        'phone' => $parent['phone'],
+                        'country_code' => $country_code[0]['code'],
+                ];
+
+                $user_partner = $parent['parent_id'][0];
 
                 $partner_id = get_user_meta(get_current_user_id(),'xs_odoo_partner_id');
                 /* Partner ID must be an integer! */
@@ -616,8 +664,9 @@ class xs_odoo_cart
                         $partner_id = $user_partner;
                 }
 
-                if(empty($id_attachment) || $user_partner !== $partner_id)
-                        return '<h1>You do not have permission to log in here!</h1>';
+                if(empty($id_attachment) || $user_partner !== $partner_id) {
+                        return array();
+                }
 
                 $pdf = $xs_odoo->read(
                         'ir.attachment',
@@ -626,7 +675,6 @@ class xs_odoo_cart
                         ],
                         [
                                 'datas',
-                                'public',
                                 'res_field',
                                 'mimetype',
                                 'name',
@@ -635,11 +683,15 @@ class xs_odoo_cart
                 );
                 $pdf = $pdf[0];
 
-                $output = '';
-                $output .= '<iframe src="data:application/pdf;base64,'.$pdf['datas'].'"
-                        style="width:100%;height:500px;"></iframe>';
+                $info['pdf'] = [
+                        'base64' => $pdf['datas'],
+                        'name' => $pdf['name'],
+                        'mimetype' => $pdf['mimetype'],
+                        'filename' => $pdf['datas_fname'],
+                        'field' => $pdf['res_field'],
+                ];
 
-                return $output;
+                return $info;
         }
 
         function get_product_variant_list()
