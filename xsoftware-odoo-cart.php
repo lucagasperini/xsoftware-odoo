@@ -24,6 +24,7 @@ class xs_odoo_cart
                 add_filter('xs_cart_item_price', [$this, 'item_price']);
                 add_filter('xs_cart_invoice_pdf', [$this, 'create_invoice_pdf']);
                 add_filter('xs_cart_get_invoice', [$this, 'get_invoice_pdf']);
+                add_filter('xs_cart_list_invoice', [$this, 'list_invoice']);
 
                 $this->options = get_option('xs_options_odoo');
         }
@@ -617,6 +618,10 @@ class xs_odoo_cart
                 ];
 
                 $id_attachment = $invoice['message_main_attachment_id'][0];
+
+                if(empty($id_attachment))
+                        return 0;
+
                 $user_partner = $invoice['partner_id'][0];
 
                 $parent = $xs_odoo->read(
@@ -662,8 +667,8 @@ class xs_odoo_cart
                         $partner_id = $user_partner;
                 }
 
-                if(empty($id_attachment) || $user_partner !== $partner_id) {
-                        return array();
+                if($user_partner !== $partner_id) {
+                        return 1;
                 }
 
                 $pdf = $xs_odoo->read(
@@ -691,6 +696,139 @@ class xs_odoo_cart
 
                 return $info;
         }
+
+        function list_invoice($user_id)
+        {
+                global $xs_odoo;
+
+                $parent_id = get_user_meta($user_id,'xs_odoo_partner_id');
+
+                $parent_id = intval($parent_id[0]);
+
+                $parent = $xs_odoo->read(
+                        'res.partner',
+                        [
+                                $parent_id
+                        ],
+                        [
+                                'child_ids'
+                        ]
+                );
+
+                $parent = $parent[0];
+
+                if(empty($parent['child_ids']))
+                        return array();
+
+
+                $partner_list = $xs_odoo->read(
+                        'res.partner',
+                        $parent['child_ids'],
+                        [
+                                'id',
+                                'name',
+                                'phone',
+                                'email',
+                                'country_id'
+                        ]
+                );
+
+                $payer_list = array();
+
+                foreach($partner_list as $partner) {
+
+                        if(!empty($partner['country_id'][0])) {
+                                $country_code = $xs_odoo->read(
+                                        'res.country',
+                                        [
+                                                $partner['country_id'][0]
+                                        ],
+                                        [
+                                                'code'
+                                        ]
+                                );
+                                $country_code = $country_code[0]['code'];
+                        } else {
+                                $country_code = NULL;
+                        }
+
+                        $payer_list[$partner['id']] = [
+                                'name' => $partner['name'],
+                                'email' => $partner['email'],
+                                'phone' => $partner['phone'],
+                                'country_code' => $country_code,
+                        ];
+                }
+
+
+                /* Create a criteria in polish notation */
+                $criteria = array();
+                $polish_count = count($payer_list) - 2;
+                $index = 0;
+
+                foreach($payer_list as $id => $payer) {
+                        if($polish_count >= $index)
+                                $criteria[] = '|';
+                        $criteria[] = ['partner_id', '=', $id];
+
+                        $index = $index + 1;
+                }
+
+
+                $invoice_list = $xs_odoo->search_read(
+                        'account.invoice',
+                        $criteria,
+                        [
+                                'id',
+                                'display_name',
+                                'origin',
+                                'reference',
+                                'date_invoice',
+                                'date_due',
+                                'date',
+                                'partner_id',
+                                'currency_id',
+                                'amount_untaxed',
+                                'amount_tax',
+                                'amount_total'
+                        ]
+                );
+
+                foreach($invoice_list as $invoice) {
+                        $tmp['invoice'] = [
+                                'id' => $invoice['id'],
+                                'name' => $invoice['display_name'],
+                                'origin' => $invoice['origin'],
+                                'reference' => $invoice['reference'],
+                                'date_invoice' => $invoice['date_invoice'],
+                                'date_due' => $invoice['date_due'],
+                                'date' => $invoice['date'],
+                        ];
+                        $tmp['payer'] = $payer_list[$invoice['partner_id'][0]];
+
+                        $currency = $xs_odoo->read(
+                                'res.currency',
+                                [
+                                        $invoice['currency_id'][0]
+                                ],
+                                ['name', 'symbol']
+                        );
+
+
+                        $tmp['transaction'] = [
+                                'currency' => $currency[0]['name'],
+                                'subtotal' => $invoice['amount_untaxed'],
+                                'tax' => $invoice['amount_tax'],
+                                'total' => $invoice['amount_total'],
+                                'currency_symbol' => $currency[0]['symbol']
+                        ];
+
+                        $info[] = $tmp;
+                }
+
+                return $info;
+        }
+
 
         function get_product_variant_list()
         {
