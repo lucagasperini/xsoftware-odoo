@@ -561,7 +561,7 @@ class xs_odoo_cart
                 global $xs_odoo;
 
                 $xs_odoo->report_pdf(
-                        200,
+                        intval($this->options['cart']['invoice_report_id']),
                         $info['invoice']['id']
                 );
 

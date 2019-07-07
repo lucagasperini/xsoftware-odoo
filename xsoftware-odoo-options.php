@@ -21,6 +21,7 @@ class xs_odoo_options
                         'journal' => 0,
                         'partner_fees' => 0,
                         'confirm_fees' => FALSE,
+                        'invoice_report_id' => 0,
                 ]
         );
 
@@ -270,7 +271,44 @@ class xs_odoo_options
                         'xs_odoo_section',
                         $options
                 );
+
+                $options = array(
+                        'name' => 'xs_options_odoo[cart][invoice_report_id]',
+                        'selected' => intval($settings['invoice_report_id']),
+                        'data' => $this->get_report_invoice_list(),
+                        'default' => 'Select invoice report type',
+                        'echo' => TRUE
+                );
+
+                add_settings_field(
+                        $options['name'],
+                        'Set invoice report type',
+                        'xs_framework::create_select',
+                        'xs_odoo',
+                        'xs_odoo_section',
+                        $options
+                );
         }
+
+        function get_report_invoice_list()
+        {
+                global $xs_odoo;
+
+                $offset = $xs_odoo->search_read(
+                        'ir.actions.report',
+                        [
+                                ['model', '=', 'account.invoice']
+                        ],
+                        ['name']
+                );
+
+                foreach($offset as $n => $list) {
+                        $return[$list['id']] = $list['name'];
+                }
+
+                return $return;
+        }
+
         function get_supplier_list()
         {
                 global $xs_odoo;
