@@ -556,31 +556,40 @@ class xs_odoo_cart
                 return $info;
         }
 
-        function create_invoice_pdf($invoice)
+        function create_invoice_pdf($info)
         {
                 global $xs_odoo;
 
-                $id_attachment = $xs_odoo->create(
-                        'ir.attachment',
-                        [
-                                'datas' => $invoice['pdf'],
-                                'public' => FALSE,
-                                'res_field' => 'account.invoice',
-                                'mimetype' => 'application/pdf',
-                                'name' => $invoice['name'],
-                                'datas_fname' => 'invoice-'.$invoice['id'].'.pdf',
-                        ]
+                $xs_odoo->report_pdf(
+                        200,
+                        $info['invoice']['id']
                 );
 
-                $xs_odoo->write(
-                        'account.invoice',
+                $pdf = $xs_odoo->search_read(
+                        'ir.attachment',
                         [
-                                $invoice['id']
+                                ['res_model', '=', 'account.invoice'],
+                                ['res_id', '=', $info['invoice']['id']]
                         ],
                         [
-                                'message_main_attachment_id' => $id_attachment
+                                'datas',
+                                'mimetype',
+                                'name',
+                                'datas_fname',
+                                'checksum'
                         ]
                 );
+                $pdf = $pdf[0];
+
+                $info['pdf'] = [
+                        'base64' => $pdf['datas'],
+                        'name' => $pdf['name'],
+                        'mimetype' => $pdf['mimetype'],
+                        'filename' => $pdf['datas_fname'],
+                        'checksum' => $pdf['checksum'],
+                ];
+
+                return $info;
         }
 
         function get_invoice_pdf($invoice_id)
@@ -600,7 +609,6 @@ class xs_odoo_cart
                                 'date_invoice',
                                 'date_due',
                                 'date',
-                                'message_main_attachment_id',
                                 'partner_id'
                         ]
                 );
@@ -616,11 +624,6 @@ class xs_odoo_cart
                         'date_due' => $invoice['date_due'],
                         'date' => $invoice['date'],
                 ];
-
-                $id_attachment = $invoice['message_main_attachment_id'][0];
-
-                if(empty($id_attachment))
-                        return 0;
 
                 $user_partner = $invoice['partner_id'][0];
 
@@ -671,17 +674,18 @@ class xs_odoo_cart
                         return 1;
                 }
 
-                $pdf = $xs_odoo->read(
+                $pdf = $xs_odoo->search_read(
                         'ir.attachment',
                         [
-                                $id_attachment
+                                ['res_model', '=', 'account.invoice'],
+                                ['res_id', '=', $info['invoice']['id']]
                         ],
                         [
                                 'datas',
-                                'res_field',
                                 'mimetype',
                                 'name',
                                 'datas_fname',
+                                'checksum'
                         ]
                 );
                 $pdf = $pdf[0];
@@ -691,7 +695,7 @@ class xs_odoo_cart
                         'name' => $pdf['name'],
                         'mimetype' => $pdf['mimetype'],
                         'filename' => $pdf['datas_fname'],
-                        'field' => $pdf['res_field'],
+                        'checksum' => $pdf['checksum'],
                 ];
 
                 return $info;

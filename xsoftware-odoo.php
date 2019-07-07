@@ -280,6 +280,20 @@ fields
 
                 return $response;
         }
+        public function report_pdf($report_id,$object_id)
+        {
+                $response = $this->getClient('object')->execute(
+                        $this->database,
+                        $this->uid(),
+                        $this->password,
+                        'ir.actions.report',
+                        'render_qweb_pdf',
+                        [$report_id],
+                        [$object_id]
+                );
+
+                return $response;
+        }
 
         /**
          * Get XmlRpc Client
