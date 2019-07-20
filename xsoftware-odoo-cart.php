@@ -126,11 +126,7 @@ class xs_odoo_cart
                         !isset($_SESSION['xs_cart_odoo']['sale_order']) ||
                         empty($_SESSION['xs_cart_odoo']['sale_order'])
                 ) {
-
-                        $partner_id = get_user_meta(get_current_user_id(), 'xs_odoo_partner_id');
-                        /* Partner ID must be an integer! */
-                        $partner_id = intval($partner_id[0]);
-                        /* TODO: if xs_odoo_partner_id is not set? */
+                        $partner_id = $this->get_partner_id(get_current_user_id());
                         $payment_term_id = intval($this->options['cart']['payment_term']);
                         $str_validity_date = "+".$this->options['cart']['validity_days']." days";
 
@@ -289,8 +285,7 @@ class xs_odoo_cart
         {
                 global $xs_odoo;
 
-                $partner_id = get_user_meta(get_current_user_id(), 'xs_odoo_partner_id');
-                $partner_id = intval($partner_id[0]);
+                $partner_id = $this->get_partner_id(get_current_user_id());
 
                 $partner_child = $xs_odoo->read('res.partner', $partner_id, ['child_ids']);
 
@@ -662,9 +657,7 @@ class xs_odoo_cart
 
                 $user_partner = $parent['parent_id'][0];
 
-                $partner_id = get_user_meta(get_current_user_id(),'xs_odoo_partner_id');
-                /* Partner ID must be an integer! */
-                $partner_id = intval($partner_id[0]);
+                $partner_id = $this->get_partner_id(get_current_user_id());
 
                 if(xs_framework::has_user_role('administrator')) {
                         $partner_id = $user_partner;
@@ -705,9 +698,7 @@ class xs_odoo_cart
         {
                 global $xs_odoo;
 
-                $parent_id = get_user_meta($user_id,'xs_odoo_partner_id');
-
-                $parent_id = intval($parent_id[0]);
+                $parent_id = $this->get_partner_id($user_id);
 
                 $parent = $xs_odoo->read(
                         'res.partner',
@@ -798,6 +789,8 @@ class xs_odoo_cart
                         ]
                 );
 
+                $info = array();
+
                 foreach($invoice_list as $invoice) {
                         $tmp['invoice'] = [
                                 'id' => $invoice['id'],
@@ -833,6 +826,22 @@ class xs_odoo_cart
                 return $info;
         }
 
+        function get_partner_id($user_id)
+        {
+                $partner_id = get_user_meta($user_id, 'xs_odoo_partner_id');
+
+                if(!empty($partner_id[0]))
+                        $partner_id = $partner_id[0];
+                else if(xs_framework::has_user_role('administrator'))
+                        $partner_id = $this->options['cart']['fallback_user'];
+                else
+                        exit;
+
+                /* Partner ID must be an integer! */
+                $partner_id = intval($partner_id);
+
+                return $partner_id;
+        }
 
         function get_product_variant_list()
         {

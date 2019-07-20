@@ -288,6 +288,23 @@ class xs_odoo_options
                         'xs_odoo_section',
                         $options
                 );
+
+                $options = array(
+                        'name' => 'xs_options_odoo[cart][fallback_user]',
+                        'selected' => intval($settings['fallback_user']),
+                        'data' => $this->get_customer_list(),
+                        'default' => 'Select fallback user',
+                        'echo' => TRUE
+                );
+
+                add_settings_field(
+                        $options['name'],
+                        'Set fallback user',
+                        'xs_framework::create_select',
+                        'xs_odoo',
+                        'xs_odoo_section',
+                        $options
+                );
         }
 
         function get_report_invoice_list()
@@ -317,6 +334,25 @@ class xs_odoo_options
                         'res.partner',
                         [
                                 ['supplier', '=', true]
+                        ],
+                        ['name']
+                );
+
+                foreach($offset as $n => $list) {
+                        $return[$list['id']] = $list['name'];
+                }
+
+                return $return;
+        }
+
+        function get_customer_list()
+        {
+                global $xs_odoo;
+
+                $offset = $xs_odoo->search_read(
+                        'res.partner',
+                        [
+                                ['customer', '=', true]
                         ],
                         ['name']
                 );
