@@ -858,8 +858,8 @@ class xs_odoo_cart
         }
 }
 
-endif;
-
 $xs_odoo_cart = new xs_odoo_cart();
+
+endif;
 
 ?>

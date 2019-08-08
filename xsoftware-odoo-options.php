@@ -393,8 +393,8 @@ class xs_odoo_options
 
 }
 
-endif;
-
 $xs_odoo_options = new xs_odoo_options();
+
+endif;
 
 ?>

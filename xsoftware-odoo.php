@@ -345,8 +345,8 @@ fields
         }
 }
 
-endif;
-
 $xs_odoo = new xs_odoo();
+
+endif;
 
 ?>

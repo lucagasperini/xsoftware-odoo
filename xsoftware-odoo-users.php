@@ -37,8 +37,8 @@ class xs_users_odoo
         }
 }
 
-endif;
-
 $xs_users_odoo = new xs_users_odoo();
+
+endif;
 
 ?>
