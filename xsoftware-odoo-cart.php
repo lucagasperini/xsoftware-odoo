@@ -710,15 +710,12 @@ class xs_odoo_cart
                         ]
                 );
 
-                $parent = $parent[0];
-
-                if(empty($parent['child_ids']))
-                        return array();
-
+                $partner_list_ids = $parent[0]['child_ids'];
+                $partner_list_ids[] = $parent_id;
 
                 $partner_list = $xs_odoo->read(
                         'res.partner',
-                        $parent['child_ids'],
+                        $partner_list_ids,
                         [
                                 'id',
                                 'name',
