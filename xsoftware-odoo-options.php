@@ -10,7 +10,7 @@ class xs_odoo_options
 
         private $default = array (
                 'conn' => [
-                        'url' => 'http://localhost:8069/xmlrpc/2',
+                        'url' => 'http://localhost:8069',
                         'db' => 'odoo',
                         'mail' => 'your-mail@email.com',
                         'pass' => 'pass'
