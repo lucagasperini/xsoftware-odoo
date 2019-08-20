@@ -655,7 +655,10 @@ class xs_odoo_cart
                         'country_code' => $country_code[0]['code'],
                 ];
 
-                $user_partner = $parent['parent_id'][0];
+                if(!empty($parent['parent_id']))
+                        $user_partner = $parent['parent_id'][0];
+                else
+                        $user_partner = $parent['id'];
 
                 $partner_id = $this->get_partner_id(get_current_user_id());
 
